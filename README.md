@@ -8,7 +8,7 @@ This Nginx module implements **JA4**, **JA4H**, **JA4TCP**, and **JA4one** finge
 
 This module is designed for:
 - **Security:** Detecting bots, scrapers, and malicious tools.
-- **Access Control:** Blocking or allowing requests based on fingerprints.
+
 - **Analytics:** Logging client types for traffic analysis.
 
 ## ⚠️ Custom Implementation Note
@@ -22,7 +22,7 @@ This module is designed for:
 - **JA4S (HTTP/2)**: Fingerprints HTTP/2 connection state (Window Size, Frame Size).
 - **JA4TCP (TCP)**: Fingerprints TCP characteristics (Window Size, Options, Flags, TTL).
 - **JA4one (Composite)**: A combined fingerprint (`JA4_JA4H`) providing a holistic view of the client (TLS + HTTP).
-- **Access Control Directives:** Native Nginx directives to block/allow traffic.
+
 - **Variables:** Exposes fingerprints as Nginx variables for logging or Lua scripting.
 
 ## Performance Benchmark
@@ -80,47 +80,7 @@ http {
 }
 ```
 
-### 2. Access Control
-You can enforce rules in your `server` or `location` blocks.
 
-**Directives:**
-- `ja4_deny` / `ja4_allow`: Check against JA4 (TLS) fingerprint.
-- `ja4h_deny` / `ja4h_allow`: Check against JA4H (HTTP) fingerprint.
-- `ja4s_deny` / `ja4s_allow`: Check against JA4S (HTTP/2) fingerprint.
-- `ja4tcp_deny` / `ja4tcp_allow`: Check against JA4TCP (TCP) fingerprint.
-- `ja4one_deny` / `ja4one_allow`: Check against JA4one composite fingerprint.
-
-**Example:**
-
-```nginx
-server {
-    listen 443 ssl;
-    
-    # Enable JA4 module (optional, enabled implicitly by directives/variables)
-    ja4 on;
-
-    # Block a specific curl client via JA4H
-    ja4h_deny "ge11n03_fe444ad14866d725a8e22320d4ed56810819b0fae0efae0c09bedfdd";
-    
-    # Block suspicious TCP fingerprints (example pattern)
-    ja4tcp_deny "29200_2-4-8-1-3_1460_7";  # Python-like small window
-    
-    # Block specific HTTP/2 fingerprint (JA4S)
-    ja4s_deny "h204_0000000000000000000000000000000000000000000000000000000000000000_0_xxxx_0";
-
-    location / {
-        # Allow specific bot via JA4one
-        ja4one_allow "t13d3012_..._ge11n03_...";
-        
-        # Add headers for debugging
-        add_header X-JA4-Fingerprint $http_ssl_ja4;
-        add_header X-JA4H-Fingerprint $http_ssl_ja4h;
-        add_header X-JA4TCP-Fingerprint $http_ssl_ja4tcp;
-        add_header X-JA4one-Fingerprint $http_ssl_ja4one;
-        add_header X-JA4S-Fingerprint $http_ssl_ja4s;
-    }
-}
-```
 
 ## Fingerprint Formats (Custom)
 Due to the full hash modification, the formats are:
@@ -147,82 +107,7 @@ Due to the full hash modification, the formats are:
 
 ## Usage Examples
 
-### Example 1: Bot Detection and Blocking
-Identify and block common bot fingerprints:
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name example.com;
-    
-    # Block known bot JA4 fingerprints
-    ja4_deny "t13d1517h2_8daaf6152771...";
-    ja4_deny "t12d2917h2_7af8b3c9...";
-    
-    # Block bot HTTP patterns
-    ja4h_deny "ge11n00_3b5f7...";
-    
-    location / {
-        return 200 "OK";
-    }
-}
-```
-
-### Example 2: Allow Only Legitimate Browsers
-Create a whitelist of known good browsers:
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name secure-api.example.com;
-    
-    # Allow Chrome
-    ja4_allow "t13d3016h2_8daaf6152771...";
-    # Allow Firefox
-    ja4_allow "t13d2217h2_a6bf3e8f...";
-    # Allow Safari
-    ja4_allow "t13d1516h2_9fe2a8c3...";
-    
-    # Deny all other fingerprints
-    ja4_deny "all";
-    
-    location /api/ {
-        proxy_pass http://backend;
-    }
-}
-```
-
-### Example 3: Multi-Layer Fingerprinting
-Combine TLS, HTTP, and TCP fingerprinting for maximum security:
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name api.example.com;
-    
-    # Block suspicious TCP patterns (typical of bots/scanners)
-    ja4tcp_deny "1024_2-4-8_1460_0";     # Unusual small window
-    ja4tcp_deny "29200_2-4-8-1-3_1460_7"; # Python requests pattern
-    
-    # Block known malicious JA4H patterns
-    ja4h_deny "po11n00_8b3f...";
-    
-    location /sensitive/ {
-        # Additional validation using JA4one
-        ja4one_deny "t13d1515h2_..._ge10n00_...";
-        
-        # Add all fingerprints to response headers for monitoring
-        add_header X-JA4 $http_ssl_ja4 always;
-        add_header X-JA4H $http_ssl_ja4h always;
-        add_header X-JA4TCP $http_ssl_ja4tcp always;
-        add_header X-JA4one $http_ssl_ja4one always;
-        
-        proxy_pass http://sensitive-backend;
-    }
-}
-```
-
-### Example 4: Analytics and Monitoring
+### Example 1: Analytics and Monitoring
 Log all fingerprints for traffic analysis:
 
 ```nginx
@@ -250,7 +135,7 @@ http {
 }
 ```
 
-### Example 5: Rate Limiting by Fingerprint
+### Example 2: Rate Limiting by Fingerprint
 Use fingerprints with Lua/OpenResty for advanced rate limiting:
 
 ```nginx
@@ -288,7 +173,7 @@ http {
 }
 ```
 
-### Example 6: Conditional Access Based on Fingerprint Type
+### Example 3: Conditional Access Based on Fingerprint Type
 Different behaviors for different client types:
 
 ```nginx
