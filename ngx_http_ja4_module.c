@@ -742,7 +742,7 @@ void ngx_ja4_calculate(ngx_connection_t *c, ngx_ssl_ja4_t *ja4) {
         default:                 ja4->version = "00"; break;
     }
     
-    ja4->transport = (c->quic) ? 'q' : 't';
+    ja4->transport = 't';
     ja4->has_sni = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name) ? 'd' : 'i';
 
     // 2. Ciphers
