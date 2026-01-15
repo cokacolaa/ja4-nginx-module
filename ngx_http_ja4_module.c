@@ -185,6 +185,7 @@ typedef struct {
 
 
 // Module Directives
+static ngx_command_t ngx_http_ja4_commands[] = {
     { ngx_string("ja4"),
       NGX_HTTP_SRV_CONF|NGX_CONF_FLAG,
       ngx_conf_set_flag_slot,
